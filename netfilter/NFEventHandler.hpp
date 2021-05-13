@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "UDPContext.hpp"
 #include "UTF-8.h"
@@ -31,7 +31,6 @@ class EventHandler
     : public nfapi::NF_EventHandler
     , public UDPProxyHandler
 {
-    friend class NetFilterCore;
     struct ORIGINAL_CONN_INFO
     {
         unsigned char remoteAddress[NF_MAX_ADDRESS_LENGTH];
@@ -46,7 +45,7 @@ class EventHandler
 
     EventHandler(logfunc func);
     virtual ~EventHandler();
-    bool init(const unsigned char *g_proxyAddress);
+    bool init(std::wstring address, std::string username, std::string password);
     void free();
 
     // from UDPProxyHandler
@@ -93,8 +92,9 @@ class EventHandler
     AutoCriticalSection m_cs;
 
   private:
-    std::string username;
-    std::string password;
+    unsigned char g_proxyAddress[NF_MAX_ADDRESS_LENGTH];
+    std::string m_username;
+    std::string m_password;
 
     std::string getProcessName(DWORD processId)
     {

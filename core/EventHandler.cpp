@@ -1,4 +1,4 @@
-﻿#include "EventHandler.hpp"
+#include "EventHandler.hpp"
 
 #include "NetfilterPlugin.hpp"
 
@@ -15,7 +15,7 @@ void NetfilterPluginEventHandler::ProcessEvent(const Connectivity::EventObject &
     {
         case Connectivity::EventType::Connected:
         {
-            core.Start(plugin_instance->options.filterOptions, "127.0.0.1", 1089);
+            core.Start(plugin_instance->options.filterOptions, "127.0.0.1", o.inboundPorts["socks"]);
             break;
         }
         case Connectivity::EventType::Disconnecting:

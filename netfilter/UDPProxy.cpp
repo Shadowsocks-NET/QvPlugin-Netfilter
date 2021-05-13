@@ -1,4 +1,4 @@
-﻿#include "UDPProxy.h"
+#include "UDPProxy.h"
 
 using namespace UdpProxy;
 
@@ -316,7 +316,6 @@ bool UDPProxy::init(UDPProxyHandler *pProxyHandler, const char *proxyAddress, in
 void UDPProxy::free()
 {
     m_service.free();
-
     while (!m_ovDataSet.empty())
     {
         tOvDataSet::iterator it = m_ovDataSet.begin();

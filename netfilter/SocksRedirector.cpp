@@ -1,4 +1,4 @@
-﻿#include "SocksRedirector.hpp"
+#include "SocksRedirector.hpp"
 
 #include "NFEventHandler.hpp"
 
@@ -24,13 +24,13 @@ NetFilterCore::NetFilterCore()
 NetFilterCore::~NetFilterCore()
 {
     Stop();
-    eh->free();
     WSACleanup();
     delete eh;
 }
 
 void NetFilterCore::Stop()
 {
+    eh->free();
     nfapi::nf_free();
 }
 
@@ -38,29 +38,11 @@ bool NetFilterCore::Start(const NetFilterConfig &conf, const QString &address, i
 {
     const auto fullAddr = address + ":" + QString::number(port);
 
-    unsigned char g_proxyAddress[NF_MAX_ADDRESS_LENGTH];
-    memset(g_proxyAddress, 0, NF_MAX_ADDRESS_LENGTH);
-
-    auto addrLen = NF_MAX_ADDRESS_LENGTH;
-    auto err = WSAStringToAddress(fullAddr.toStdWString().data(), AF_INET, NULL, (LPSOCKADDR) &g_proxyAddress, &addrLen);
-    if (err < 0)
-    {
-        addrLen = sizeof(g_proxyAddress);
-        err = WSAStringToAddress(fullAddr.toStdWString().data(), AF_INET6, NULL, (LPSOCKADDR) &g_proxyAddress, &addrLen);
-        if (err < 0)
-        {
-            printf("WSAStringToAddress failed, err=%d", WSAGetLastError());
-            return false;
-        }
-    }
-
-    if (!eh->init(g_proxyAddress))
+    if (!eh->init(fullAddr.toStdWString(), username.toStdString(), password.toStdString()))
     {
         printf("Failed to initialize the event handler");
         return false;
     }
-    eh->username = username.toStdString();
-    eh->password = password.toStdString();
 
     // Initialize the library and start filtering thread
     if (nf_init(NFDRIVER_NAME, eh) != NF_STATUS_SUCCESS)
@@ -69,15 +51,25 @@ bool NetFilterCore::Start(const NetFilterConfig &conf, const QString &address, i
         return false;
     }
 
+#define ADD_PRIVATE_IPV4_ADDRESS(addr, mask)                                                                                                         \
+    {                                                                                                                                                \
+        nfapi::NF_RULE rule;                                                                                                                         \
+        memset(&rule, 0, sizeof(rule));                                                                                                              \
+        rule.filteringFlag = nfapi::NF_ALLOW;                                                                                                        \
+        rule.ip_family = AF_INET;                                                                                                                    \
+        inet_pton(AF_INET, addr, &rule.remoteIpAddress);                                                                                             \
+        inet_pton(AF_INET, mask, &rule.remoteIpAddressMask);                                                                                         \
+        nf_addRule(&rule, FALSE);                                                                                                                    \
+    }
+
+    ADD_PRIVATE_IPV4_ADDRESS("10.0.0.1", "255.0.0.0")
+    ADD_PRIVATE_IPV4_ADDRESS("127.0.0.1", "255.0.0.0")
+    ADD_PRIVATE_IPV4_ADDRESS("172.16.0.1", "255.240.0.0")
+    ADD_PRIVATE_IPV4_ADDRESS("192.168.0.1", "255.255.0.0")
+    ADD_PRIVATE_IPV4_ADDRESS("224.0.0.1", "240.0.0.0")
+
     {
         nfapi::NF_RULE rule;
-        memset(&rule, 0, sizeof(rule));
-        rule.filteringFlag = nfapi::NF_ALLOW;
-        rule.ip_family = AF_INET;
-        inet_pton(AF_INET, "127.0.0.1", &rule.remoteIpAddress);
-        inet_pton(AF_INET, "255.0.0.0", &rule.remoteIpAddressMask);
-        nf_addRule(&rule, FALSE);
-
         memset(&rule, 0, sizeof(rule));
         rule.filteringFlag = nfapi::NF_ALLOW;
         rule.ip_family = AF_INET6;
@@ -99,7 +91,6 @@ bool NetFilterCore::Start(const NetFilterConfig &conf, const QString &address, i
         nfapi::NF_RULE_EX ruleEx;
         memset(&ruleEx, 0, sizeof(ruleEx));
         ruleEx.protocol = IPPROTO_TCP;
-        ruleEx.direction = nfapi::NF_D_OUT;
         ruleEx.filteringFlag = nfapi::NF_INDICATE_CONNECT_REQUESTS;
         nf_addRuleEx(&ruleEx, FALSE);
 

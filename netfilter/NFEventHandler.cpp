@@ -1,4 +1,4 @@
-﻿#include "NFEventHandler.hpp"
+#include "NFEventHandler.hpp"
 
 #include "UDPProxy.h"
 
@@ -19,8 +19,23 @@ void EventHandler::udpConnectRequest(nfapi::ENDPOINT_ID, nfapi::PNF_UDP_CONN_REQ
 void EventHandler::udpCanReceive(nfapi::ENDPOINT_ID){};
 void EventHandler::udpCanSend(nfapi::ENDPOINT_ID){};
 
-bool EventHandler::init(const unsigned char *g_proxyAddress)
+bool EventHandler::init(std::wstring address, std::string username, std::string password)
 {
+    memset(g_proxyAddress, 0, NF_MAX_ADDRESS_LENGTH);
+
+    auto addrLen = NF_MAX_ADDRESS_LENGTH;
+    auto err = WSAStringToAddress(address.data(), AF_INET, NULL, (LPSOCKADDR) &g_proxyAddress, &addrLen);
+    if (err < 0)
+    {
+        addrLen = sizeof(g_proxyAddress);
+        err = WSAStringToAddress(address.data(), AF_INET6, NULL, (LPSOCKADDR) &g_proxyAddress, &addrLen);
+        if (err < 0)
+        {
+            printf("WSAStringToAddress failed, err=%d", WSAGetLastError());
+            return false;
+        }
+    }
+
     const int size = (((sockaddr *) g_proxyAddress)->sa_family == AF_INET6) ? sizeof(sockaddr_in6) : sizeof(sockaddr_in);
     if (!m_udpProxy->init(this, (char *) g_proxyAddress, size, username, password))
     {
@@ -54,11 +69,6 @@ void EventHandler::onUdpReceiveComplete(unsigned long long id, char *buf, int le
 
 void EventHandler::tcpConnectRequest(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo)
 {
-    sockaddr_in addrV4;
-    memset(&addrV4, 0, sizeof(addrV4));
-    addrV4.sin_family = AF_INET;
-    inet_pton(AF_INET, "127.0.0.1", &addrV4.sin_addr.S_un.S_addr);
-    addrV4.sin_port = htons(1089);
 
     ORIGINAL_CONN_INFO oci;
     memcpy(oci.remoteAddress, pConnInfo->remoteAddress, sizeof(oci.remoteAddress));
@@ -69,13 +79,32 @@ void EventHandler::tcpConnectRequest(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_
     sockaddr *pAddr = (sockaddr *) pConnInfo->remoteAddress;
     int addrLen = (pAddr->sa_family == AF_INET6) ? sizeof(sockaddr_in6) : sizeof(sockaddr_in);
 
+    //    if (pAddr->sa_family == AF_INET)
+    //    {
     // Redirect the connection if it is not already redirected
-    if (memcmp(pAddr, &addrV4, addrLen) != 0)
+    if (memcmp(pAddr, &g_proxyAddress, addrLen) != 0)
     {
         // Change the remote address
-        memcpy(pConnInfo->remoteAddress, &addrV4, sizeof(pConnInfo->remoteAddress));
+        memcpy(pConnInfo->remoteAddress, &g_proxyAddress, sizeof(pConnInfo->remoteAddress));
         pConnInfo->filteringFlag |= nfapi::NF_FILTER;
     }
+    //    }
+
+    //    if (pAddr->sa_family == AF_INET6)
+    //    {
+    //        sockaddr_in6 addrV6;
+    //        memset(&addrV6, 0, sizeof(addrV6));
+    //        addrV6.sin6_family = AF_INET6;
+    //        inet_pton(AF_INET6, "::1", &addrV6.sin6_addr);
+    //        addrV6.sin6_port = htons(socksPort);
+    //        // Redirect the connection if it is not already redirected
+    //        if (memcmp(pAddr, &addrV6, addrLen) != 0)
+    //        {
+    //            // Change the remote address
+    //            memcpy(pConnInfo->remoteAddress, &addrV6, sizeof(pConnInfo->remoteAddress));
+    //            pConnInfo->filteringFlag |= nfapi::NF_FILTER;
+    //        }
+    //    }
 }
 
 void EventHandler::tcpConnected(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo)
