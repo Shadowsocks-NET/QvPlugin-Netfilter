@@ -18,7 +18,10 @@ struct UDPContext
     ~UDPContext()
     {
         if (m_options)
+        {
             delete[] m_options;
+            m_options = NULL;
+        }
     }
 
     nfapi::PNF_UDP_OPTIONS m_options;

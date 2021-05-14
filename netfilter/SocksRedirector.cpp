@@ -23,7 +23,6 @@ NetFilterCore::NetFilterCore()
 
 NetFilterCore::~NetFilterCore()
 {
-    Stop();
     WSACleanup();
     delete eh;
 }
@@ -74,6 +73,15 @@ bool NetFilterCore::Start(const NetFilterConfig &conf, const QString &address, i
         rule.filteringFlag = nfapi::NF_ALLOW;
         rule.ip_family = AF_INET6;
         rule.remoteIpAddress[15] = 1;
+        nf_addRule(&rule, FALSE);
+    }
+
+    {
+        nfapi::NF_RULE rule;
+        memset(&rule, 0, sizeof(rule));
+        rule.filteringFlag = nfapi::NF_ALLOW;
+        rule.ip_family = AF_INET6;
+        inet_pton(AF_INET, "::ffff:127.0.0.1", &rule.remoteIpAddress);
         nf_addRule(&rule, FALSE);
     }
 

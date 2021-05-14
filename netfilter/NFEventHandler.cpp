@@ -72,7 +72,6 @@ void EventHandler::tcpConnectRequest(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_
 
     ORIGINAL_CONN_INFO oci;
     memcpy(oci.remoteAddress, pConnInfo->remoteAddress, sizeof(oci.remoteAddress));
-
     // Save the original remote address
     m_connInfoMap[id] = oci;
 
