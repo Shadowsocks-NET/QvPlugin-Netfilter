@@ -2,6 +2,8 @@ project(QvPlugin-WinNetFilter)
 cmake_policy(SET CMP0003 NEW)
 cmake_policy(SET CMP0012 NEW)
 cmake_minimum_required(VERSION 3.1.0)
+cmake_policy(SET CMP0100 NEW)
+cmake_policy(SET CMP0071 NEW)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -44,8 +46,8 @@ add_library(${PROJECT_NAME} MODULE
     ${CMAKE_SOURCE_DIR}/netfilter/NFEventHandler.cpp
     ${CMAKE_SOURCE_DIR}/netfilter/NFEventHandler.hpp
     ${CMAKE_SOURCE_DIR}/netfilter/sync.h
-    ${CMAKE_SOURCE_DIR}/netfilter/UDPProxy.h
     ${CMAKE_SOURCE_DIR}/netfilter/base.h
+    ${CMAKE_SOURCE_DIR}/netfilter/UDPProxy.h
     ${CMAKE_SOURCE_DIR}/netfilter/UDPProxy.cpp
     ${CMAKE_SOURCE_DIR}/netfilter/UTF-8.h)
 

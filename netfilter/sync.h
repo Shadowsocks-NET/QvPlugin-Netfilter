@@ -1,4 +1,4 @@
-﻿//
+//
 // 	NetFilterSDK
 // 	Copyright (C) Vitaly Sidorov
 //	All rights reserved.
@@ -18,9 +18,11 @@ class CriticalSection
     CriticalSection() throw()
     {
         memset(&m_sec, 0, sizeof(CRITICAL_SECTION));
+        InitializeCriticalSection(&m_sec);
     }
     ~CriticalSection()
     {
+        DeleteCriticalSection(&m_sec);
     }
     HRESULT Lock() throw()
     {
@@ -32,51 +34,15 @@ class CriticalSection
         LeaveCriticalSection(&m_sec);
         return S_OK;
     }
-    HRESULT Init() throw()
-    {
-        HRESULT hRes = E_FAIL;
-        __try
-        {
-            InitializeCriticalSection(&m_sec);
-            hRes = S_OK;
-        }
-        // structured exception may be raised in low memory situations
-        __except (STATUS_NO_MEMORY == GetExceptionCode())
-        {
-            hRes = E_OUTOFMEMORY;
-        }
-        return hRes;
-    }
-
-    HRESULT Term() throw()
-    {
-        DeleteCriticalSection(&m_sec);
-        return S_OK;
-    }
-    CRITICAL_SECTION m_sec;
-};
-
-class AutoCriticalSection : public CriticalSection
-{
-  public:
-    AutoCriticalSection()
-    {
-        CriticalSection::Init();
-    }
-    ~AutoCriticalSection() throw()
-    {
-        CriticalSection::Term();
-    }
 
   private:
-    HRESULT Init();
-    HRESULT Term();
+    CRITICAL_SECTION m_sec;
 };
 
 class AutoLock
 {
   public:
-    AutoLock(AutoCriticalSection &cs) : m_cs(cs)
+    AutoLock(CriticalSection &cs) : m_cs(cs)
     {
         m_cs.Lock();
     }
@@ -87,24 +53,7 @@ class AutoLock
     }
 
   private:
-    AutoCriticalSection &m_cs;
-};
-
-class AutoUnlock
-{
-  public:
-    AutoUnlock(AutoCriticalSection &cs) : m_cs(cs)
-    {
-        m_cs.Unlock();
-    }
-
-    virtual ~AutoUnlock()
-    {
-        m_cs.Lock();
-    }
-
-  private:
-    AutoCriticalSection &m_cs;
+    CriticalSection &m_cs;
 };
 
 class AutoHandle
@@ -152,6 +101,7 @@ class AutoHandle
     {
         m_h = h; // Take ownership
     }
+
     // Detach the handle from the object (releases ownership).
     HANDLE Detach() throw()
     {
@@ -173,7 +123,7 @@ class AutoHandle
         }
     }
 
-  public:
+  protected:
     HANDLE m_h;
 };
 
@@ -185,19 +135,6 @@ class AutoEventHandle : public AutoHandle
         m_h = CreateEvent(NULL, FALSE, FALSE, NULL);
     }
     ~AutoEventHandle()
-    {
-        Close();
-    }
-};
-
-class AutoEventHandleM : public AutoHandle
-{
-  public:
-    AutoEventHandleM()
-    {
-        m_h = CreateEvent(NULL, TRUE, FALSE, NULL);
-    }
-    ~AutoEventHandleM()
     {
         Close();
     }

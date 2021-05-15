@@ -1,13 +1,11 @@
 #pragma once
 
 #include "UDPContext.hpp"
-#include "UTF-8.h"
 #include "base.h"
-#include "nfapi.h"
-#include "sync.h"
 
 #include <functional>
 #include <map>
+#include <mutex>
 #include <set>
 #include <vector>
 
@@ -85,34 +83,12 @@ class EventHandler
   private:
     // TcpProxy::TCPProxy *m_tcpProxy;
     UdpProxy::UDPProxy *m_udpProxy;
-
     std::map<uint64_t, UDPContext *> m_udpCtxMap;
-    std::set<uint64_t> m_filteredUdpIds;
 
-    AutoCriticalSection m_cs;
+    std::mutex lock;
 
   private:
     unsigned char g_proxyAddress[NF_MAX_ADDRESS_LENGTH];
     std::string m_username;
     std::string m_password;
-
-    std::string getProcessName(DWORD processId)
-    {
-        wchar_t processName[512] = L"";
-        wchar_t fullProcessName[512] = L"";
-        BOOL nameAcquired = FALSE;
-
-        if (processId == 4)
-            return "system";
-
-        nameAcquired = nfapi::nf_getProcessNameFromKernel(processId, processName, sizeof(processName) / 2);
-
-        if (nameAcquired)
-        {
-            if (!GetLongPathName(processName, fullProcessName, (DWORD) ARRAYSIZE(fullProcessName)))
-                wcsncpy_s(fullProcessName, 512, processName, 512);
-        }
-
-        return encodeUTF8(fullProcessName);
-    }
 };

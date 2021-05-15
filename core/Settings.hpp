@@ -19,5 +19,6 @@ class PluginOptions : public QObject
     Q_OBJECT
   public:
     QJS_PROP(NetFilterConfig, filterOptions)
-    QJS_FUNCTION(PluginOptions, F(filterOptions))
+    QJS_PROP_D(bool, autoStart, false)
+    QJS_FUNCTION(PluginOptions, F(filterOptions, autoStart))
 };

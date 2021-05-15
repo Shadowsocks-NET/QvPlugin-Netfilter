@@ -11,11 +11,11 @@ NetfilterPluginEventHandler::NetfilterPluginEventHandler() : QObject(), Qv2rayPl
 
 void NetfilterPluginEventHandler::ProcessEvent(const Connectivity::EventObject &o)
 {
-    switch (o.eventType)
+    switch (o.Type)
     {
         case Connectivity::EventType::Connected:
         {
-            core.Start(plugin_instance->options.filterOptions, "127.0.0.1", o.inboundPorts["socks"]);
+            core.Start(plugin_instance->options.filterOptions, "127.0.0.1", o.InboundPorts["socks"]);
             break;
         }
         case Connectivity::EventType::Disconnecting:

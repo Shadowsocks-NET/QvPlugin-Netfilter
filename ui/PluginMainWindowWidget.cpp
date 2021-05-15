@@ -1,6 +1,6 @@
 #include "PluginMainWindowWidget.hpp"
 
-SimplePluginMainWindowWidget::SimplePluginMainWindowWidget(QWidget *parent) : Qv2rayPlugin::QvPluginMainWindowWidget(parent)
+SimplePluginMainWindowWidget::SimplePluginMainWindowWidget(QWidget *parent) : Qv2rayPlugin::PluginMainWindowWidget(parent)
 {
     setupUi(this);
 }

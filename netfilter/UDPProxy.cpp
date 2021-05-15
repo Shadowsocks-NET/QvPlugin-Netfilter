@@ -1,4 +1,4 @@
-#include "UDPProxy.h"
+#include "UdpProxy.h"
 
 using namespace UdpProxy;
 
@@ -164,18 +164,18 @@ void UDPProxy::onTcpReceiveComplete(SOCKET socket, DWORD dwTransferred, OV_DATA 
                     }
                 }
                 break;
+
+                default: break;
             }
         }
     }
 
     memset(&pov->ol, 0, sizeof(pov->ol));
-
     startTcpReceive(socket, pov->id, pov);
 }
 
 void UDPProxy::onTcpSendComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *pov, int error)
 {
-    //		DbgPrint("UDPProxy::onTcpSendComplete %I64u bytes=%d, err=%d", pov->id, dwTransferred, error);
     deleteOV_DATA(pov);
 }
 
@@ -183,43 +183,31 @@ void UDPProxy::onConnectComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *po
 {
     if (error != 0)
     {
-        // DbgPrint("UDPProxy::onConnectComplete %I64u failed, err=%d", pov->id, error);
         deleteProxyConnection(pov->id);
         deleteOV_DATA(pov);
         return;
     }
 
+    AutoLock lock(m_cs);
+
+    auto it = m_socketMap.find(pov->id);
+    if (it != m_socketMap.end())
     {
-        AutoLock lock(m_cs);
+        BOOL val = 1;
+        setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (char *) &val, sizeof(val));
+        setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (char *) &val, sizeof(val));
 
-        tSocketMap::iterator it = m_socketMap.find(pov->id);
-        if (it != m_socketMap.end())
+        SOCKS5_AUTH_REQUEST authReq;
+        authReq.version = SOCKS_5;
+        authReq.nmethods = 1;
+        authReq.methods[0] = it->second->userName.empty() ? S5AM_NONE : S5AM_UNPW;
+
+        if (startTcpSend(it->second->tcpSocket, (char *) &authReq, sizeof(authReq), pov->id))
         {
-            BOOL val = 1;
-            setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (char *) &val, sizeof(val));
-            setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (char *) &val, sizeof(val));
-
-            SOCKS5_AUTH_REQUEST authReq;
-
-            authReq.version = SOCKS_5;
-            authReq.nmethods = 1;
-
-            if (!it->second->userName.empty())
-            {
-                authReq.methods[0] = S5AM_UNPW;
-            }
-            else
-            {
-                authReq.methods[0] = S5AM_NONE;
-            }
-
-            if (startTcpSend(it->second->tcpSocket, (char *) &authReq, sizeof(authReq), pov->id))
-            {
-                it->second->proxyState = PS_AUTH;
-            }
-
-            startTcpReceive(it->second->tcpSocket, pov->id, NULL);
+            it->second->proxyState = PS_AUTH;
         }
+
+        startTcpReceive(it->second->tcpSocket, pov->id, NULL);
     }
 
     deleteOV_DATA(pov);
@@ -240,7 +228,7 @@ void UDPProxy::onUdpReceiveComplete(SOCKET socket, DWORD dwTransferred, OV_DATA 
         SOCKS5_UDP_REQUEST *pReq = (SOCKS5_UDP_REQUEST *) &pov->buffer[0];
         if (pReq->address_type == SOCKS5_ADDR_IPV4)
         {
-            SOCKS5_UDP_REQUEST_IPv4 *pReqIPv4 = (SOCKS5_UDP_REQUEST_IPv4 *) &pov->buffer[0];
+            const auto pReqIPv4 = (SOCKS5_UDP_REQUEST_IPv4 *) &pov->buffer[0];
 
             sockaddr_in addr;
             memset(&addr, 0, sizeof(addr));
@@ -248,12 +236,12 @@ void UDPProxy::onUdpReceiveComplete(SOCKET socket, DWORD dwTransferred, OV_DATA 
             addr.sin_addr.S_un.S_addr = pReqIPv4->address;
             addr.sin_port = pReqIPv4->port;
 
-            m_pProxyHandler->onUdpReceiveComplete(pov->id, &pov->buffer[sizeof(SOCKS5_UDP_REQUEST_IPv4)],
-                                                  dwTransferred - sizeof(SOCKS5_UDP_REQUEST_IPv4), (char *) &addr, sizeof(addr));
+            constexpr auto size = sizeof(SOCKS5_UDP_REQUEST_IPv4);
+            m_pProxyHandler->onUdpReceiveComplete(pov->id, &pov->buffer[size], dwTransferred - size, (char *) &addr, sizeof(addr));
         }
         else if (pReq->address_type == SOCKS5_ADDR_IPV6)
         {
-            SOCKS5_UDP_REQUEST_IPv6 *pReqIPv6 = (SOCKS5_UDP_REQUEST_IPv6 *) &pov->buffer[0];
+            const auto pReqIPv6 = (SOCKS5_UDP_REQUEST_IPv6 *) &pov->buffer[0];
 
             sockaddr_in6 addr;
             memset(&addr, 0, sizeof(addr));
@@ -261,13 +249,12 @@ void UDPProxy::onUdpReceiveComplete(SOCKET socket, DWORD dwTransferred, OV_DATA 
             memcpy(&addr.sin6_addr, pReqIPv6->address, 16);
             addr.sin6_port = pReqIPv6->port;
 
-            m_pProxyHandler->onUdpReceiveComplete(pov->id, &pov->buffer[sizeof(SOCKS5_UDP_REQUEST_IPv6)],
-                                                  dwTransferred - sizeof(SOCKS5_UDP_REQUEST_IPv6), (char *) &addr, sizeof(addr));
+            constexpr auto size = sizeof(SOCKS5_UDP_REQUEST_IPv6);
+            m_pProxyHandler->onUdpReceiveComplete(pov->id, &pov->buffer[size], dwTransferred - size, (char *) &addr, sizeof(addr));
         }
     }
 
     memset(&pov->ol, 0, sizeof(pov->ol));
-
     startUdpReceive(socket, pov->id, pov);
 }
 
@@ -303,10 +290,8 @@ bool UDPProxy::init(UDPProxyHandler *pProxyHandler, const char *proxyAddress, in
         return false;
 
     m_pProxyHandler = pProxyHandler;
-
     memcpy(m_proxyAddress, proxyAddress, proxyAddressLen);
     m_proxyAddressLen = proxyAddressLen;
-
     m_userName = user;
     m_userPassword = pass;
 
@@ -318,13 +303,13 @@ void UDPProxy::free()
     m_service.free();
     while (!m_ovDataSet.empty())
     {
-        tOvDataSet::iterator it = m_ovDataSet.begin();
+        auto it = m_ovDataSet.begin();
         delete (*it);
         m_ovDataSet.erase(it);
     }
     while (!m_socketMap.empty())
     {
-        tSocketMap::iterator it = m_socketMap.begin();
+        auto it = m_socketMap.begin();
         delete it->second;
         m_socketMap.erase(it);
     }
@@ -351,14 +336,11 @@ bool UDPProxy::createProxyConnection(unsigned long long id)
 
         {
             AutoLock lock(m_cs);
-
             PROXY_DATA *pd = new PROXY_DATA();
             pd->tcpSocket = tcpSocket;
             pd->udpSocket = udpSocket;
-
             pd->userName = m_userName;
             pd->userPassword = m_userPassword;
-
             m_socketMap[id] = pd;
         }
 
@@ -378,15 +360,13 @@ bool UDPProxy::createProxyConnection(unsigned long long id)
 
     if (!result)
     {
-        {
-            AutoLock lock(m_cs);
+        AutoLock lock(m_cs);
 
-            tSocketMap::iterator it = m_socketMap.find(id);
-            if (it != m_socketMap.end())
-            {
-                delete it->second;
-                m_socketMap.erase(it);
-            }
+        auto it = m_socketMap.find(id);
+        if (it != m_socketMap.end())
+        {
+            delete it->second;
+            m_socketMap.erase(it);
         }
     }
 
@@ -398,7 +378,7 @@ void UDPProxy::deleteProxyConnection(unsigned long long id)
     // DbgPrint("UDPProxy::deleteProxyConnection %I64u", id);
 
     AutoLock lock(m_cs);
-    tSocketMap::iterator it = m_socketMap.find(id);
+    auto it = m_socketMap.find(id);
     if (it != m_socketMap.end())
     {
         delete it->second;
@@ -415,7 +395,7 @@ bool UDPProxy::udpSend(unsigned long long id, char *buf, int len, char *remoteAd
     {
         AutoLock lock(m_cs);
 
-        tSocketMap::iterator it = m_socketMap.find(id);
+        auto it = m_socketMap.find(id);
         if (it == m_socketMap.end())
         {
             return false;
@@ -426,15 +406,11 @@ bool UDPProxy::udpSend(unsigned long long id, char *buf, int len, char *remoteAd
             if (len > 0)
             {
                 UDP_PACKET *p = new UDP_PACKET();
-
                 memcpy(p->remoteAddress, remoteAddress, remoteAddressLen);
                 p->remoteAddressLen = remoteAddressLen;
                 p->buffer.resize(len);
                 memcpy(&p->buffer[0], buf, len);
-
                 it->second->udpSendPackets.push_back(p);
-
-                //					DbgPrint("udpSend %I64u packet pended", id);
             }
             return true;
         }
@@ -490,9 +466,7 @@ bool UDPProxy::udpSend(unsigned long long id, char *buf, int len, char *remoteAd
                 pov->type = OVT_UDP_RECEIVE;
                 pov->buffer.clear();
                 if (!m_service.postCompletion(s, 0, &pov->ol))
-                {
                     deleteOV_DATA(pov);
-                }
                 return false;
             }
         }
@@ -518,8 +492,7 @@ OV_DATA *UDPProxy::newOV_DATA()
 void UDPProxy::deleteOV_DATA(OV_DATA *pov)
 {
     AutoLock lock(m_cs);
-    tOvDataSet::iterator it;
-    it = m_ovDataSet.find(pov);
+    auto it = m_ovDataSet.find(pov);
     if (it == m_ovDataSet.end())
         return;
     m_ovDataSet.erase(it);
@@ -579,27 +552,16 @@ bool UDPProxy::startUdpReceive(SOCKET socket, unsigned long long id, OV_DATA *po
     pov->remoteAddressLen = sizeof(pov->remoteAddress);
 
     if (WSARecvFrom(socket, &bufs, 1, &dwBytes, &dwFlags, (sockaddr *) pov->remoteAddress, &pov->remoteAddressLen, &pov->ol, NULL) != 0)
-    {
-        int err = WSAGetLastError();
-        if (err != ERROR_IO_PENDING)
-        {
+        if (WSAGetLastError() != ERROR_IO_PENDING)
             if (!m_service.postCompletion(socket, 0, &pov->ol))
-            {
                 deleteOV_DATA(pov);
-            }
-            return true;
-        }
-    }
 
     return true;
 }
 
 bool UDPProxy::startTcpReceive(SOCKET socket, unsigned long long id, OV_DATA *pov)
 {
-    DWORD dwBytes, dwFlags;
-    WSABUF bufs;
-
-    if (pov == NULL)
+    if (pov == nullptr)
     {
         pov = newOV_DATA();
         pov->type = OVT_TCP_RECEIVE;
@@ -607,23 +569,15 @@ bool UDPProxy::startTcpReceive(SOCKET socket, unsigned long long id, OV_DATA *po
         pov->buffer.resize(PACKET_SIZE);
     }
 
+    WSABUF bufs;
     bufs.buf = &pov->buffer[0];
     bufs.len = (u_long) pov->buffer.size();
 
-    dwFlags = 0;
-
+    DWORD dwBytes = 0, dwFlags = 0;
     if (WSARecv(socket, &bufs, 1, &dwBytes, &dwFlags, &pov->ol, NULL) != 0)
-    {
-        int err = WSAGetLastError();
-        if (err != ERROR_IO_PENDING)
-        {
+        if (WSAGetLastError() != ERROR_IO_PENDING)
             if (!m_service.postCompletion(socket, 0, &pov->ol))
-            {
                 deleteOV_DATA(pov);
-            }
-            return true;
-        }
-    }
 
     return true;
 }
@@ -632,8 +586,6 @@ bool UDPProxy::startTcpSend(SOCKET socket, char *buf, int len, unsigned long lon
 {
     OV_DATA *pov = newOV_DATA();
     DWORD dwBytes;
-
-    // DbgPrint("UDPProxy::startTcpSend %I64u bytes=%d", id, len);
 
     pov->id = id;
     pov->type = OVT_TCP_SEND;
@@ -670,6 +622,5 @@ bool UDPProxy::startTcpSend(SOCKET socket, char *buf, int len, unsigned long lon
 
 void UDPProxy::onUdpSendComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *pov, int error)
 {
-    //		DbgPrint("UDPProxy::onUdpSendComplete %I64u bytes=%d, err=%d", pov->id, dwTransferred, error);
     deleteOV_DATA(pov);
 }

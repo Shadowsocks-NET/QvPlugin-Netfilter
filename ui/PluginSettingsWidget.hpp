@@ -5,7 +5,7 @@
 #include "ui_PluginSettingsWidget.h"
 
 class SimplePluginSettingsWidget
-    : public Qv2rayPlugin::QvPluginSettingsWidget
+    : public Qv2rayPlugin::PluginSettingsWidget
     , private Ui::PluginSettingsWidget
 {
     Q_OBJECT

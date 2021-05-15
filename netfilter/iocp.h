@@ -1,4 +1,4 @@
-﻿//
+//
 // 	NetFilterSDK
 // 	Copyright (C) Vitaly Sidorov
 //	All rights reserved.
@@ -31,9 +31,7 @@ class IOCPService
     IOCPService() : m_hIOCP(INVALID_HANDLE_VALUE), m_pHandler(NULL)
     {
     }
-    ~IOCPService()
-    {
-    }
+    ~IOCPService() = default;
 
     bool init(IOCPHandler *pHandler)
     {
@@ -76,15 +74,12 @@ class IOCPService
 
     bool registerSocket(SOCKET s)
     {
-        if (!CreateIoCompletionPort((HANDLE) s, m_hIOCP, (ULONG_PTR) s, 1))
-            return false;
-
-        return true;
+        return CreateIoCompletionPort((HANDLE) s, m_hIOCP, (ULONG_PTR) s, 1);
     }
 
     bool postCompletion(SOCKET s, DWORD dwTransferred, LPOVERLAPPED pol)
     {
-        return PostQueuedCompletionStatus(m_hIOCP, dwTransferred, (ULONG_PTR) s, pol) ? true : false;
+        return PostQueuedCompletionStatus(m_hIOCP, dwTransferred, (ULONG_PTR) s, pol);
     }
 
   protected:

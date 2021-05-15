@@ -1,8 +1,9 @@
 #include "PluginSettingsWidget.hpp"
 
-SimplePluginSettingsWidget::SimplePluginSettingsWidget(QWidget *parent) : Qv2rayPlugin::QvPluginSettingsWidget(parent)
+SimplePluginSettingsWidget::SimplePluginSettingsWidget(QWidget *parent) : Qv2rayPlugin::PluginSettingsWidget(parent)
 {
     setupUi(this);
+    QJS_RWBINDING(option.autoStart, autoStartCB, "checked", &QCheckBox::toggled);
 }
 
 void SimplePluginSettingsWidget::changeEvent(QEvent *e)

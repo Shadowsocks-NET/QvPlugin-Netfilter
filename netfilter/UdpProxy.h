@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "SOCKS.h"
 #include "UDPContext.hpp"
@@ -40,8 +40,6 @@ namespace UdpProxy
         int remoteAddressLen;
         std::vector<char> buffer;
     };
-
-    typedef std::set<OV_DATA *> tOvDataSet;
 
     enum PROXY_STATE
     {
@@ -108,47 +106,46 @@ namespace UdpProxy
         bool udpRecvStarted;
     };
 
-    typedef std::map<unsigned __int64, PROXY_DATA *> tSocketMap;
-
     class UDPProxy : public IOCPHandler
     {
       public:
-        UDPProxy() : m_pProxyHandler(NULL)
-        {
-        }
-
-        virtual ~UDPProxy()
-        {
-        }
+        UDPProxy() = default;
+        virtual ~UDPProxy() = default;
 
         void *getExtensionFunction(SOCKET s, const GUID *which_fn);
-
         bool initExtensions();
 
         bool init(UDPProxyHandler *hander, const char *addr, int addrlen, const std::string &user, const std::string &pass);
         void free();
+
         bool createProxyConnection(unsigned __int64 id);
         void deleteProxyConnection(unsigned __int64 id);
+
         bool udpSend(unsigned __int64 id, char *buf, int len, char *remoteAddress, int remoteAddressLen);
+
         OV_DATA *newOV_DATA();
         void deleteOV_DATA(OV_DATA *pov);
+
         bool startConnect(SOCKET socket, sockaddr *pAddr, int addrLen, unsigned __int64 id);
         bool startUdpReceive(SOCKET socket, unsigned __int64 id, OV_DATA *pov);
         bool startTcpReceive(SOCKET socket, unsigned __int64 id, OV_DATA *pov);
         bool startTcpSend(SOCKET socket, char *buf, int len, unsigned __int64 id);
+
         void onUdpSendComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *pov, int error);
         void onUdpReceiveComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *pov, int error);
+
         void onConnectComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *pov, int error);
         void onTcpSendComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *pov, int error);
         void onTcpReceiveComplete(SOCKET socket, DWORD dwTransferred, OV_DATA *pov, int error);
+
         virtual void onComplete(SOCKET socket, DWORD dwTransferred, OVERLAPPED *pOverlapped, int error);
 
       private:
         IOCPService m_service;
-        UDPProxyHandler *m_pProxyHandler;
+        UDPProxyHandler *m_pProxyHandler = nullptr;
 
-        tOvDataSet m_ovDataSet;
-        tSocketMap m_socketMap;
+        std::set<OV_DATA *> m_ovDataSet;
+        std::map<uint64_t, PROXY_DATA *> m_socketMap;
 
         LPFN_CONNECTEX m_pConnectEx;
 
@@ -158,6 +155,6 @@ namespace UdpProxy
         std::string m_userName;
         std::string m_userPassword;
 
-        AutoCriticalSection m_cs;
+        CriticalSection m_cs;
     };
 } // namespace UdpProxy

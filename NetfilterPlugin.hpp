@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "QvGUIPluginInterface.hpp"
 #include "QvPluginInterface.hpp"
@@ -22,7 +22,7 @@ class NetfilterPlugin
     const QvPluginMetadata GetMetadata() const override
     {
         return { "Windows Transparent Proxy",                               //
-                 "Community",                                                   //
+                 "Community",                                               //
                  "qvplugin_winnetfilter",                                   //
                  "Transparent Proxy Plugin on Windows, using NetfilterSDK", //
                  "v0.1",                                                    //
@@ -35,10 +35,11 @@ class NetfilterPlugin
     }
     ~NetfilterPlugin(){};
     bool InitializePlugin(const QString &, const QJsonObject &) override;
+    void SettingsUpdated() override{};
 
   signals:
-    void PluginLog(const QString &) const override;
-    void PluginErrorMessageBox(const QString &, const QString &) const override;
+    void PluginLog(QString) const override;
+    void PluginErrorMessageBox(QString, QString) const override;
 
   private:
     PluginOptions options;

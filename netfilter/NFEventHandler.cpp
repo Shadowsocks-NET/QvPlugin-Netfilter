@@ -1,6 +1,6 @@
 #include "NFEventHandler.hpp"
 
-#include "UDPProxy.h"
+#include "UdpProxy.h"
 
 EventHandler::EventHandler(logfunc func)
 {
@@ -49,16 +49,16 @@ bool EventHandler::init(std::wstring address, std::string username, std::string 
 void EventHandler::free()
 {
     m_udpProxy->free();
-    AutoLock lock(m_cs);
+    std::lock_guard<std::mutex> guard(lock);
     for (auto &&[k, v] : m_udpCtxMap)
         delete v;
-    m_filteredUdpIds.clear();
+    m_udpCtxMap.clear();
 }
 
 void EventHandler::onUdpReceiveComplete(unsigned long long id, char *buf, int len, char *remoteAddress, int remoteAddressLen)
 {
     (void) remoteAddressLen;
-    AutoLock lock(m_cs);
+    std::lock_guard<std::mutex> guard(lock);
 
     auto it = m_udpCtxMap.find(id);
     if (it == m_udpCtxMap.end())
@@ -178,10 +178,8 @@ void EventHandler::tcpSend(nfapi::ENDPOINT_ID id, const char *buf, int len)
 
 void EventHandler::udpCreated(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pConnInfo)
 {
+    std::lock_guard<std::mutex> guard(lock);
     LogUDP(true, id, pConnInfo);
-
-    AutoLock lock(m_cs);
-    m_filteredUdpIds.insert(id);
 }
 
 void EventHandler::udpClosed(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pConnInfo)
@@ -190,16 +188,12 @@ void EventHandler::udpClosed(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pCo
 
     m_udpProxy->deleteProxyConnection(id);
 
-    AutoLock lock(m_cs);
-
-    auto it = m_udpCtxMap.find(id);
-    if (it != m_udpCtxMap.end())
+    std::lock_guard<std::mutex> guard(lock);
+    if (m_udpCtxMap.find(id) != m_udpCtxMap.end())
     {
-        delete it->second;
-        m_udpCtxMap.erase(it);
+        delete m_udpCtxMap[id];
+        m_udpCtxMap.erase(id);
     }
-
-    m_filteredUdpIds.erase(id);
 }
 
 void EventHandler::udpReceive(nfapi::ENDPOINT_ID id, const unsigned char *remoteAddress, const char *buf, int len, nfapi::PNF_UDP_OPTIONS options)
@@ -211,31 +205,19 @@ void EventHandler::udpReceive(nfapi::ENDPOINT_ID id, const unsigned char *remote
 void EventHandler::udpSend(nfapi::ENDPOINT_ID id, const unsigned char *remoteAddress, const char *buf, int len, nfapi::PNF_UDP_OPTIONS options)
 {
     {
-        AutoLock lock(m_cs);
-
-        auto itid = m_filteredUdpIds.find(id);
-        if (itid == m_filteredUdpIds.end())
-        {
-            nf_udpPostSend(id, remoteAddress, buf, len, options);
-            return;
-        }
-
-        auto it = m_udpCtxMap.find(id);
-        if (it == m_udpCtxMap.end())
+        std::lock_guard<std::mutex> guard(lock);
+        if (m_udpCtxMap.find(id) == m_udpCtxMap.end())
         {
             if (!m_udpProxy->createProxyConnection(id))
                 return;
-
             m_udpCtxMap[id] = new UDPContext(options);
         }
     }
 
+    int addrLen = (((sockaddr *) remoteAddress)->sa_family == AF_INET) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+    if (!m_udpProxy->udpSend(id, (char *) buf, len, (char *) remoteAddress, addrLen))
     {
-        int addrLen = (((sockaddr *) remoteAddress)->sa_family == AF_INET) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
-        if (!m_udpProxy->udpSend(id, (char *) buf, len, (char *) remoteAddress, addrLen))
-        {
-            nf_udpPostSend(id, remoteAddress, buf, len, options);
-        }
+        nf_udpPostSend(id, remoteAddress, buf, len, options);
     }
 }
 
