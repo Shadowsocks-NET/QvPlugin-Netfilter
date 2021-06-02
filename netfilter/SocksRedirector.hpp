@@ -12,7 +12,7 @@ class NetFilterCore : public QObject
     Q_OBJECT
   public:
     NetFilterCore();
-    bool Start(const NetFilterConfig &conf, const QString &address, int port, const QString &username = "", const QString &password = "");
+    bool Start(const FilterRules &rules, const QString &address, int port, const QString &username = "", const QString &password = "");
     void Stop();
     virtual ~NetFilterCore();
 

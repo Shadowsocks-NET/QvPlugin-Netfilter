@@ -15,8 +15,3 @@ void SimplePluginSettingsWidget::changeEvent(QEvent *e)
         default: break;
     }
 }
-
-void SimplePluginSettingsWidget::on_ignoredPatternTxt_textChanged()
-{
-    option.filterOptions->bypassProcesses = ignoredPatternTxt->toPlainText().split("\n");
-}

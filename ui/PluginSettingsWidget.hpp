@@ -15,8 +15,8 @@ class SimplePluginSettingsWidget
     void SetSettings(const QJsonObject &o) override
     {
         option.loadJson(o);
-        ignoredPatternTxt->setPlainText(option.filterOptions->bypassProcesses->join("\n"));
     }
+
     QJsonObject GetSettings() override
     {
         return option.toJson();
@@ -24,9 +24,6 @@ class SimplePluginSettingsWidget
 
   protected:
     void changeEvent(QEvent *e) override;
-
-  private slots:
-    void on_ignoredPatternTxt_textChanged();
 
   private:
     PluginOptions option;

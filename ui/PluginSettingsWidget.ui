@@ -28,22 +28,6 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Ignored Program Patterns</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QPlainTextEdit" name="ignoredPatternTxt">
-     <property name="plainText">
-      <string>qv2ray.exe
-v2ray.exe
-</string>
-     </property>
-    </widget>
-   </item>
   </layout>
  </widget>
  <resources/>

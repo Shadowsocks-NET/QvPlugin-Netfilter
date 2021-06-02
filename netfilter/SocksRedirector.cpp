@@ -33,7 +33,7 @@ void NetFilterCore::Stop()
     nfapi::nf_free();
 }
 
-bool NetFilterCore::Start(const NetFilterConfig &conf, const QString &address, int port, const QString &username, const QString &password)
+bool NetFilterCore::Start(const FilterRules &rules, const QString &address, int port, const QString &username, const QString &password)
 {
     const auto fullAddr = address + ":" + QString::number(port);
 
@@ -85,12 +85,28 @@ bool NetFilterCore::Start(const NetFilterConfig &conf, const QString &address, i
         nf_addRule(&rule, FALSE);
     }
 
-    for (const auto &process : qAsConst(*conf.bypassProcesses))
+    for (const auto &rule : rules)
     {
         nfapi::NF_RULE_EX ruleEx;
         memset(&ruleEx, 0, sizeof(ruleEx));
         ruleEx.filteringFlag = nfapi::NF_ALLOW;
-        wcsncpy((wchar_t *) ruleEx.processName, process.toStdWString().c_str(), MAX_PATH);
+
+        if (rule.portTo != 0)
+        {
+            ruleEx.remotePortRange.valueLow = rule.portFrom;
+            ruleEx.remotePortRange.valueHigh = rule.portTo;
+        }
+        else if (rule.portFrom != 0)
+        {
+            ruleEx.remotePort = rule.portFrom;
+        }
+
+        if (rule.networkType != NETWORK_UNSPECIFIED)
+            ruleEx.protocol = rule.networkType;
+
+        if (!rule.processName->isEmpty())
+            wcsncpy((wchar_t *) ruleEx.processName, rule.processName->toStdWString().c_str(), MAX_PATH);
+
         nf_addRuleEx(&ruleEx, TRUE);
     }
 
