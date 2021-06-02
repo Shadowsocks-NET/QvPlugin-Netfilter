@@ -25,16 +25,14 @@ class NetfilterPlugin
                  "Community",                                               //
                  "qvplugin_winnetfilter",                                   //
                  "Transparent Proxy Plugin on Windows, using NetfilterSDK", //
-                 "v0.1",                                                    //
                  "",                                                        //
                  {
                      COMPONENT_EVENT_HANDLER, //
                      COMPONENT_GUI            //
-                 },
-                 UPDATE_GITHUB_RELEASE };
+                 } };
     }
     ~NetfilterPlugin(){};
-    bool InitializePlugin(const QString &, const QJsonObject &) override;
+    bool InitializePlugin() override;
     void SettingsUpdated() override{};
 
   signals:
@@ -44,5 +42,3 @@ class NetfilterPlugin
   private:
     PluginOptions options;
 };
-
-inline NetfilterPlugin *plugin_instance;

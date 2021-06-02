@@ -3,7 +3,7 @@
 SimplePluginSettingsWidget::SimplePluginSettingsWidget(QWidget *parent) : Qv2rayPlugin::PluginSettingsWidget(parent)
 {
     setupUi(this);
-    QJS_RWBINDING(option.autoStart, autoStartCB, "checked", &QCheckBox::toggled);
+    option.autoStart.ReadWriteBind(autoStartCB, "checked", &QCheckBox::toggled);
 }
 
 void SimplePluginSettingsWidget::changeEvent(QEvent *e)

@@ -3,13 +3,10 @@
 #include "core/EventHandler.hpp"
 #include "ui/Interface.hpp"
 
-bool NetfilterPlugin::InitializePlugin(const QString &, const QJsonObject &_settings)
+bool NetfilterPlugin::InitializePlugin()
 {
-    plugin_instance = this;
-    emit PluginLog("Initialize plugin.");
-    this->settings = _settings;
-    options.loadJson(settings);
-    eventHandler = std::make_shared<NetfilterPluginEventHandler>();
-    guiInterface = new SimpleGUIInterface();
+    options.loadJson(m_Settings);
+    m_EventHandler = std::make_shared<NetfilterPluginEventHandler>();
+    m_GUIInterface = new SimpleGUIInterface();
     return true;
 }

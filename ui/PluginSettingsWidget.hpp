@@ -29,6 +29,5 @@ class SimplePluginSettingsWidget
     void on_ignoredPatternTxt_textChanged();
 
   private:
-    QJS_BINDING_HELPERS
     PluginOptions option;
 };

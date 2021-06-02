@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "3rdparty/QJsonStruct/QJsonStruct.hpp"
 #include "core/Settings.hpp"
 
 #include <QObject>
