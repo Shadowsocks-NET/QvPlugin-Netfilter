@@ -22,7 +22,7 @@ add_subdirectory(interface)
 
 add_definitions(-DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A000000 -DWIN32_LEAN_AND_MEAN)
 
-add_library(NetFilterPlugin SHARED
+set(SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/NetfilterPlugin.hpp
     ${CMAKE_CURRENT_LIST_DIR}/NetfilterPlugin.cpp
     ${CMAKE_CURRENT_LIST_DIR}/core/Settings.hpp
@@ -53,8 +53,10 @@ add_library(NetFilterPlugin SHARED
 
 target_include_directories(NetFilterPlugin PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netfilter/include)
 
-qv2ray_configure_plugin(NetFilterPlugin Widgets
+qv2ray_add_plugin(NetFilterPlugin Widgets
     EXTRA_DEPENDENCY_DIRS_WINDOWS "${CMAKE_CURRENT_LIST_DIR}/netfilter/bin/release")
+
+target_sources(NetFilterPlugin PRIVATE ${SOURCES})
 
 target_link_libraries(NetFilterPlugin PRIVATE ws2_32 wininet ${CMAKE_CURRENT_LIST_DIR}/netfilter/lib/${CMAKE_BUILD_TYPE}/nfapi.lib)
 target_link_libraries(NetFilterPlugin PRIVATE Qt::Network)
