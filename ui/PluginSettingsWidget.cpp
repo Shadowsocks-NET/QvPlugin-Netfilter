@@ -1,6 +1,6 @@
 #include "PluginSettingsWidget.hpp"
 
-SimplePluginSettingsWidget::SimplePluginSettingsWidget(QWidget *parent) : Qv2rayPlugin::PluginSettingsWidget(parent)
+SimplePluginSettingsWidget::SimplePluginSettingsWidget(QWidget *parent) : Qv2rayPlugin::Gui::PluginSettingsWidget(parent)
 {
     setupUi(this);
     option.autoStart.ReadWriteBind(autoStartCB, "checked", &QCheckBox::toggled);

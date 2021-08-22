@@ -1,8 +1,12 @@
 ﻿#pragma once
-#include "interface/handlers/EventHandler.hpp"
+#include "QvPlugin/Handlers/EventHandler.hpp"
 #include "netfilter/SocksRedirector.hpp"
 
-class NetfilterPluginEventHandler : public QObject, public Qv2rayPlugin::handlers::event::PluginEventHandler
+using namespace Qv2rayPlugin::Event;
+
+class NetfilterPluginEventHandler
+    : public QObject
+    , public Qv2rayPlugin::Event::IEventHandler
 {
     Q_OBJECT
   public:

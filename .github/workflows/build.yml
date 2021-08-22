@@ -1,29 +1,24 @@
-name: QvPlugin Build Action Qt6 - cmake
+name: QvPlugin Build Action Qt6
 
-on: 
+on:
   push:
   release:
     types: [prereleased]
 
 jobs:
   build:
-    strategy:
-      matrix:
-        qt_version: [6.1.0]
-      fail-fast: false
-        
     runs-on: windows-latest
-    env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
     steps:
       - name: Get the version
         id: get_version
         shell: bash
         run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+
       - name: Get Plugin Name
         id: get_name
         shell: bash
         run: echo ::set-output name=NAME::QvPlugin-WinNetFilter
+
       - name: Checking out sources
         uses: actions/checkout@master
         with:
@@ -40,21 +35,17 @@ jobs:
           toolset: 14.2
           arch: x64
 
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v1
-        with:
-          path: ../Qt
-          key: QtCache-${{ matrix.qt_version }}
-
-      - name: Installing Qt - ${{ matrix.arch }}
+      - name: Install Qt
         uses: jurplel/install-qt-action@v2
         with:
-          version: ${{ matrix.qt_version }}
+          version: 6.2.0
           arch: win64_msvc2019_64
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          aqtversion: ==1.2.2
 
-      - name: Generate Dependencies and Build
+      - name: Install Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.0.2
+
+      - name: Build
         shell: bash
         env:
           CC: cl.exe
@@ -68,7 +59,7 @@ jobs:
       - name: Uploading artifact
         uses: actions/upload-artifact@master
         with:
-          name: ${{ steps.get_name.outputs.NAME }}-${{ github.sha }}.Windows.Qt${{ matrix.qt_version }}.dll
+          name: ${{ steps.get_name.outputs.NAME }}-${{ github.sha }}.Windows.dll
           path: build/Release/${{ steps.get_name.outputs.NAME }}.dll
 
       - name: Upload binaries to release

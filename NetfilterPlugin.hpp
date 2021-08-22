@@ -1,7 +1,6 @@
 #pragma once
 
-#include "QvGUIPluginInterface.hpp"
-#include "QvPluginInterface.hpp"
+#include "QvPlugin/PluginInterface.hpp"
 #include "core/Settings.hpp"
 
 #include <QObject>
@@ -11,33 +10,27 @@ using namespace Qv2rayPlugin;
 
 class NetfilterPlugin
     : public QObject
-    , Qv2rayInterface
+    , public Qv2rayInterface<NetfilterPlugin>
 {
-    Q_INTERFACES(Qv2rayPlugin::Qv2rayInterface)
-    Q_PLUGIN_METADATA(IID Qv2rayInterface_IID)
     Q_OBJECT
+    QV2RAY_PLUGIN(NetfilterPlugin)
     friend class NetfilterPluginEventHandler;
 
   public:
     const QvPluginMetadata GetMetadata() const override
     {
-        return { "Windows Transparent Proxy",                               //
-                 "Community",                                               //
-                 "qvplugin_winnetfilter",                                   //
-                 "Transparent Proxy Plugin on Windows, using NetfilterSDK", //
-                 "",                                                        //
-                 {
-                     COMPONENT_EVENT_HANDLER, //
-                     COMPONENT_GUI            //
-                 } };
+        return QvPluginMetadata{
+            "NetFilter Transparent Proxy",
+            "Community",
+            PluginId{ "netfilter" },
+            "A transparent proxy plugin for Qv2ray, uses NetfilterSDK",
+            QUrl{},
+            { Qv2rayPlugin::COMPONENT_EVENT_HANDLER, Qv2rayPlugin::COMPONENT_GUI },
+        };
     }
-    ~NetfilterPlugin(){};
+
     bool InitializePlugin() override;
     void SettingsUpdated() override{};
-
-  signals:
-    void PluginLog(QString) const override;
-    void PluginErrorMessageBox(QString, QString) const override;
 
   private:
     PluginOptions options;

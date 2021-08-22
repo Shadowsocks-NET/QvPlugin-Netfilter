@@ -1,10 +1,10 @@
 #pragma once
 
-#include "QvGUIPluginInterface.hpp"
+#include "QvPlugin/Gui/QvGUIPluginInterface.hpp"
 #include "ui_PluginMainWindowWidget.h"
 
 class SimplePluginMainWindowWidget
-    : public Qv2rayPlugin::PluginMainWindowWidget
+    : public Qv2rayPlugin::Gui::PluginMainWindowWidget
     , private Ui::PluginMainWindowWidget
 {
     Q_OBJECT

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "QJsonStruct.hpp"
+#include "QvPlugin/Utils/BindableProps.hpp"
+#include "QvPlugin/Utils/JsonConversion.hpp"
 
 #include <QObject>
 
@@ -11,15 +12,14 @@ enum NetworkType
     NETWORK_UDP = 17
 };
 
-class FilterRule : public QObject
+struct FilterRule
 {
-    Q_OBJECT
-    QJS_FUNCTION(FilterRule, F(portFrom, portTo, networkType, processName))
-    QJS_PROP_D(int, portFrom, 0)
-    QJS_PROP_D(int, portTo, 0)
-    QJS_PROP_D(NetworkType, networkType, NETWORK_UNSPECIFIED)
-    QJS_PROP_D(QString, processName, "")
-    explicit FilterRule(int f, int t = 0, NetworkType n = NETWORK_UNSPECIFIED, QString proc = "")
+    QJS_JSON(F(portFrom, portTo, networkType, processName))
+    Bindable<int> portFrom{ 0 };
+    Bindable<int> portTo{ 0 };
+    Bindable<NetworkType> networkType{ NETWORK_UNSPECIFIED };
+    Bindable<QString> processName{ "" };
+    explicit FilterRule(int f = 0, int t = 0, NetworkType n = NETWORK_UNSPECIFIED, QString proc = "")
     {
         portFrom = f;
         portTo = t;
@@ -35,11 +35,9 @@ static const inline FilterRules DefaultRules = QList<FilterRule>()              
                                                << FilterRule{ 67, 0, NETWORK_UDP }                      // DHCP
                                                << FilterRule{ 123, 0, NETWORK_UDP };                    // NTP
 
-class PluginOptions : public QObject
+struct PluginOptions
 {
-    Q_OBJECT
-  public:
-    QJS_FUNCTION(PluginOptions, F(rules, autoStart))
-    QJS_PROP_D(FilterRules, rules, DefaultRules, REQUIRED)
-    QJS_PROP_D(bool, autoStart, false)
+    QJS_JSON(F(rules, autoStart))
+    Bindable<FilterRules> rules{ DefaultRules };
+    Bindable<bool> autoStart{ false };
 };

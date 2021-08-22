@@ -47,32 +47,32 @@ class EventHandler
     void free();
 
     // from UDPProxyHandler
-    virtual void onUdpReceiveComplete(unsigned __int64 id, char *buf, int len, char *remoteAddress, int remoteAddressLen);
+    virtual void onUdpReceiveComplete(unsigned __int64 id, char *buf, int len, char *remoteAddress, int remoteAddressLen) override;
 
-    virtual void threadStart(){};
-    virtual void threadEnd(){};
+    virtual void threadStart() override{};
+    virtual void threadEnd() override{};
 
     //
     // TCP events
     //
-    virtual void tcpConnectRequest(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo);
-    virtual void tcpConnected(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo);
-    virtual void tcpClosed(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo);
-    virtual void tcpReceive(nfapi::ENDPOINT_ID id, const char *buf, int len);
-    virtual void tcpSend(nfapi::ENDPOINT_ID id, const char *buf, int len);
-    virtual void tcpCanReceive(nfapi::ENDPOINT_ID id);
-    virtual void tcpCanSend(nfapi::ENDPOINT_ID id);
+    virtual void tcpConnectRequest(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo) override;
+    virtual void tcpConnected(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo) override;
+    virtual void tcpClosed(nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo) override;
+    virtual void tcpReceive(nfapi::ENDPOINT_ID id, const char *buf, int len) override;
+    virtual void tcpSend(nfapi::ENDPOINT_ID id, const char *buf, int len) override;
+    virtual void tcpCanReceive(nfapi::ENDPOINT_ID id) override;
+    virtual void tcpCanSend(nfapi::ENDPOINT_ID id) override;
 
     //
     // UDP events
     //
-    virtual void udpCreated(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pConnInfo);
-    virtual void udpConnectRequest(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_REQUEST pConnReq);
-    virtual void udpClosed(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pConnInfo);
-    virtual void udpReceive(nfapi::ENDPOINT_ID id, const unsigned char *remoteAddress, const char *buf, int len, nfapi::PNF_UDP_OPTIONS options);
-    virtual void udpSend(nfapi::ENDPOINT_ID id, const unsigned char *remoteAddress, const char *buf, int len, nfapi::PNF_UDP_OPTIONS options);
-    virtual void udpCanReceive(nfapi::ENDPOINT_ID id);
-    virtual void udpCanSend(nfapi::ENDPOINT_ID id);
+    virtual void udpCreated(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pConnInfo) override;
+    virtual void udpConnectRequest(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_REQUEST pConnReq) override;
+    virtual void udpClosed(nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pConnInfo) override;
+    virtual void udpReceive(nfapi::ENDPOINT_ID id, const unsigned char *remoteAddr, const char *buf, int len, nfapi::PNF_UDP_OPTIONS opt) override;
+    virtual void udpSend(nfapi::ENDPOINT_ID id, const unsigned char *remoteAddr, const char *buf, int len, nfapi::PNF_UDP_OPTIONS opt) override;
+    virtual void udpCanReceive(nfapi::ENDPOINT_ID id) override;
+    virtual void udpCanSend(nfapi::ENDPOINT_ID id) override;
 
     void LogTCP(bool connected, nfapi::ENDPOINT_ID id, nfapi::PNF_TCP_CONN_INFO pConnInfo);
     void LogUDP(bool created, nfapi::ENDPOINT_ID id, nfapi::PNF_UDP_CONN_INFO pConnInfo);

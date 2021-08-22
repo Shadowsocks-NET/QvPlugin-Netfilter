@@ -1,25 +1,27 @@
 #pragma once
 
-#include "QvGUIPluginInterface.hpp"
+#include "QvPlugin/Gui/QvGUIPluginInterface.hpp"
 #include "core/Settings.hpp"
 #include "ui_PluginSettingsWidget.h"
 
 class SimplePluginSettingsWidget
-    : public Qv2rayPlugin::PluginSettingsWidget
+    : public Qv2rayPlugin::Gui::PluginSettingsWidget
     , private Ui::PluginSettingsWidget
 {
     Q_OBJECT
 
   public:
     explicit SimplePluginSettingsWidget(QWidget *parent = nullptr);
-    void SetSettings(const QJsonObject &o) override
-    {
-        option.loadJson(o);
-    }
 
-    QJsonObject GetSettings() override
+    // PluginSettingsWidget interface
+  public:
+    void Load() override
     {
-        return option.toJson();
+        option.loadJson(settings);
+    }
+    void Store() override
+    {
+        settings = option.toJson();
     }
 
   protected:
