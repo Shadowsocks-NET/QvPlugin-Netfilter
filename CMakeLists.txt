@@ -51,10 +51,10 @@ set(SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/netfilter/UDPProxy.cpp
     ${CMAKE_CURRENT_LIST_DIR}/netfilter/UTF-8.h)
 
-target_include_directories(NetFilterPlugin PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netfilter/include)
-
 qv2ray_add_plugin(NetFilterPlugin Widgets
     EXTRA_DEPENDENCY_DIRS_WINDOWS "${CMAKE_CURRENT_LIST_DIR}/netfilter/bin/release")
+
+target_include_directories(NetFilterPlugin PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netfilter/include)
 
 target_sources(NetFilterPlugin PRIVATE ${SOURCES})
 
